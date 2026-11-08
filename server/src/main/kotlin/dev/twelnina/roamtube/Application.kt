@@ -5,13 +5,19 @@ import dev.twelnina.roamtube.extractor.JvmDownloader
 import dev.twelnina.roamtube.extractor.MusicChartExtractor
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
-import io.ktor.server.application.*
-import io.ktor.server.engine.*
-import io.ktor.server.netty.*
+import io.ktor.server.application.Application
+import io.ktor.server.application.install
+import io.ktor.server.application.log
+import io.ktor.server.engine.embeddedServer
+import io.ktor.server.netty.Netty
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
+import io.ktor.server.response.respond
+import io.ktor.server.response.respondText
+import io.ktor.server.routing.get
+import io.ktor.server.routing.routing
+import kotlinx.io.IOException
 import org.schabi.newpipe.extractor.NewPipe
+import org.schabi.newpipe.extractor.exceptions.ExtractionException
 import org.schabi.newpipe.extractor.exceptions.UnsupportedContentInCountryException
 import java.util.Locale
 
@@ -50,10 +56,26 @@ fun Application.module() {
             var contentRegion = region
 
             val videos = try {
-                musicChartExtractor.fetch(contentRegion)
-            } catch (_: UnsupportedContentInCountryException) {
-                contentRegion = "US"
-                musicChartExtractor.fetch(contentRegion)
+                try {
+                    musicChartExtractor.fetch(contentRegion)
+                } catch (_: UnsupportedContentInCountryException) {
+                    contentRegion = "US"
+                    musicChartExtractor.fetch(contentRegion)
+                }
+            } catch (e: IOException) {
+                call.application.log.error("Music charts request failed", e)
+                call.respond(
+                    HttpStatusCode.BadGateway,
+                    mapOf("error" to "Failed to retrieve music charts")
+                )
+                return@get
+            } catch (e: ExtractionException) {
+                call.application.log.error("Music charts extraction failed", e)
+                call.respond(
+                    HttpStatusCode.BadGateway,
+                    mapOf("error" to "Failed to extract music charts")
+                )
+                return@get
             }
 
             call.respond(
