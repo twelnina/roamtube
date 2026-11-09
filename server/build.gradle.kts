@@ -14,6 +14,9 @@ dependencies {
     implementation(libs.logback)
     implementation(libs.ktor.serverCore)
     implementation(libs.ktor.serverNetty)
+    implementation(libs.ktor.serverContentNegotiation)
+    implementation(libs.ktor.serializationKotlinxJson)
+    implementation(libs.newpipe.extractor)
     testImplementation(libs.ktor.serverTestHost)
     testImplementation(libs.kotlin.testJunit)
 }

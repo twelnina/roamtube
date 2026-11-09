@@ -23,6 +23,12 @@ dependencyResolutionManagement {
                 includeGroupAndSubgroups("com.google")
             }
         }
+        maven("https://jitpack.io") {
+            content {
+                includeGroup("com.github.teamnewpipe")
+                includeGroup("com.github.TeamNewPipe")
+            }
+        }
         mavenCentral()
     }
 }
