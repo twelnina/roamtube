@@ -9,8 +9,7 @@ plugins {
 
 kotlin {
     listOf(
-        iosArm64(),
-        iosSimulatorArm64()
+        iosArm64(), iosSimulatorArm64()
     ).forEach { iosTarget ->
         iosTarget.binaries.framework {
             baseName = "Shared"
@@ -61,6 +60,7 @@ kotlin {
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation(libs.kotlinx.coroutinesTest)
         }
         getByName("androidDeviceTest").dependencies {
             implementation(libs.androidx.testRunner)
