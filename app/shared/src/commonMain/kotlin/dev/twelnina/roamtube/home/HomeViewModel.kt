@@ -11,23 +11,18 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class HomeViewModel(
-    private val repository: HomeRepository,
-    private val region: String
+    private val repository: HomeRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     private var fetchJob: Job? = null
 
-    init {
-        fetchHome()
+    fun retry(region: String) {
+        fetchHome(region)
     }
 
-    fun retry() {
-        fetchHome()
-    }
-
-    private fun fetchHome() {
+    fun fetchHome(region: String) {
         if (fetchJob?.isActive == true) return
 
         fetchJob = viewModelScope.launch {

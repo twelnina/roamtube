@@ -31,6 +31,28 @@ class HomeViewModelTest {
     }
 
     @Test
+    fun constructionDoesNotFetchHome() = runTest {
+        var fetchCount = 0
+        val repository = object : HomeRepository {
+            override suspend fun fetchHome(region: String): HomeResponse {
+                fetchCount++
+                return HomeResponse(
+                    requestedRegion = region,
+                    contentRegion = region,
+                    fallbackReason = null,
+                    videos = emptyList()
+                )
+            }
+        }
+        val viewModel = HomeViewModel(repository)
+
+        advanceUntilIdle()
+
+        assertEquals(0, fetchCount)
+        assertEquals(HomeUiState.Loading, viewModel.uiState.value)
+    }
+
+    @Test
     fun initialFetchWithNoVideosShowsEmpty() = runTest {
         val expectedResponse = HomeResponse(
             requestedRegion = "JP",
@@ -46,7 +68,8 @@ class HomeViewModelTest {
                 return expectedResponse
             }
         }
-        val viewModel = HomeViewModel(repository, "JP")
+        val viewModel = HomeViewModel(repository)
+        viewModel.fetchHome("JP")
 
         assertEquals(HomeUiState.Loading, viewModel.uiState.value)
 
@@ -78,7 +101,8 @@ class HomeViewModelTest {
                 return expectedResponse
             }
         }
-        val viewModel = HomeViewModel(repository, region = "JP")
+        val viewModel = HomeViewModel(repository)
+        viewModel.fetchHome("JP")
 
         assertEquals(HomeUiState.Loading, viewModel.uiState.value)
 
@@ -97,7 +121,8 @@ class HomeViewModelTest {
                 throw IllegalStateException("Test failure")
             }
         }
-        val viewModel = HomeViewModel(repository, "JP")
+        val viewModel = HomeViewModel(repository)
+        viewModel.fetchHome("JP")
 
         assertEquals(HomeUiState.Loading, viewModel.uiState.value)
 
@@ -126,14 +151,15 @@ class HomeViewModelTest {
                 return retryResponse.await()
             }
         }
-        val viewModel = HomeViewModel(repository, "JP")
+        val viewModel = HomeViewModel(repository)
+        viewModel.fetchHome("JP")
 
         advanceUntilIdle()
 
         assertEquals(1, fetchCount)
         assertEquals(HomeUiState.Error, viewModel.uiState.value)
 
-        viewModel.retry()
+        viewModel.retry("JP")
         runCurrent()
 
         assertEquals(2, fetchCount)
@@ -162,12 +188,13 @@ class HomeViewModelTest {
                 return response.await()
             }
         }
-        val viewModel = HomeViewModel(repository, "JP")
+        val viewModel = HomeViewModel(repository)
+        viewModel.fetchHome("JP")
         runCurrent()
 
         assertEquals(1, fetchCount)
 
-        repeat(3) { viewModel.retry() }
+        repeat(3) { viewModel.retry("JP") }
         runCurrent()
 
         assertEquals(1, fetchCount)
@@ -187,7 +214,8 @@ class HomeViewModelTest {
                 throw CancellationException("Test cancellation")
             }
         }
-        val viewModel = HomeViewModel(repository, "JP")
+        val viewModel = HomeViewModel(repository)
+        viewModel.fetchHome("JP")
 
         advanceUntilIdle()
 
