@@ -13,15 +13,38 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.twelnina.roamtube.api.HomeResponse
 import dev.twelnina.roamtube.api.VideoSummary
+
+@Composable
+fun HomeRoute(
+    viewModel: HomeViewModel,
+    region: String,
+    modifier: Modifier = Modifier
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(viewModel, region) {
+        viewModel.fetchHome(region)
+    }
+
+    HomeScreen(
+        uiState = uiState,
+        onRetry = { viewModel.retry(region) },
+        modifier = modifier
+    )
+}
 
 @Composable
 fun HomeScreen(
@@ -29,39 +52,42 @@ fun HomeScreen(
     onRetry: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier.fillMaxSize().padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        val response = when (uiState) {
-            is HomeUiState.Success -> uiState.response
-            is HomeUiState.Empty -> uiState.response
-            else -> null
-        }
+    Scaffold() {
+        Column(
+            modifier = modifier.fillMaxSize().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            val response = when (uiState) {
+                is HomeUiState.Success -> uiState.response
+                is HomeUiState.Empty -> uiState.response
+                else -> null
+            }
 
-        if (response != null) {
-            Text("Music charts: ${response.contentRegion}")
+            if (response != null) {
+                Text("Music charts: ${response.contentRegion}")
 
-            if (response.contentRegion != response.requestedRegion) {
-                Text(
-                    "Charts for ${response.requestedRegion} are unavailable. " +
-                            "Showing charts for ${response.contentRegion} instead."
+                if (response.contentRegion != response.requestedRegion) {
+                    Text(
+                        "Charts for ${response.requestedRegion} are unavailable. " +
+                                "Showing charts for ${response.contentRegion} instead."
+                    )
+                }
+            }
+
+            when (uiState) {
+                HomeUiState.Loading -> HomeLoadingContent(modifier = Modifier.fillMaxSize())
+                is HomeUiState.Success -> HomeSuccessContent(
+                    response = uiState.response,
+                    modifier = Modifier.weight(1f)
+                )
+
+                is HomeUiState.Empty -> HomeEmptyContent()
+                HomeUiState.Error -> HomeErrorContent(
+                    onRetry = onRetry,
+                    modifier = Modifier.fillMaxSize()
                 )
             }
-        }
-
-        when (uiState) {
-            HomeUiState.Loading -> HomeLoadingContent(modifier = Modifier.fillMaxSize())
-            is HomeUiState.Success -> HomeSuccessContent(
-                response = uiState.response,
-                modifier = Modifier.weight(1f)
-            )
-            is HomeUiState.Empty -> HomeEmptyContent()
-            HomeUiState.Error -> HomeErrorContent(
-                onRetry = onRetry,
-                modifier = Modifier.fillMaxSize()
-            )
         }
     }
 }
