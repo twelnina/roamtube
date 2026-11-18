@@ -29,6 +29,16 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
+
+        val apiBaseUrl = providers.gradleProperty("roamtube.apiBaseUrl")
+            .orElse("http://10.0.2.2:8080")
+            .get()
+
+        buildConfigField(
+            "String",
+            "API_BASE_URL",
+            "\"$apiBaseUrl\""
+        )
     }
     packaging {
         resources {
@@ -50,5 +60,6 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
